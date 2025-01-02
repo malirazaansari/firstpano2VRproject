@@ -72,21 +72,56 @@
     </div>
 
     <script type="text/javascript">
-      function saveLastNode(nodeId) {
-        console.log(`Saving last node: ${nodeId}`);
-        try {
-          localStorage.setItem("lastViewedNode", nodeId);
-          console.log("Last node saved to localStorage:", nodeId);
-        } catch (e) {
-          console.error("Failed to save last node to localStorage:", e);
-        }
-      }
+      //   async function loadPanoramaConfig() {
+      //     try {
+      //       const response = await fetch("pano.xml");
+      //       if (!response.ok) throw new Error("Failed to load pano.xml");
 
-      function getLastNode() {
-        const lastNode = localStorage.getItem("lastViewedNode");
-        console.log("Last node retrieved from localStorage:", lastNode);
-        return lastNode;
-      }
+      //       const xmlText = await response.text();
+      //       const parser = new DOMParser();
+      //       const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+      //       return xmlDoc;
+      //     } catch (error) {
+      //       console.error("Error loading pano.xml:", error);
+      //       return null;
+      //     }
+      //   }
+
+      //   window.addEventListener("load", async () => {
+      //     try {
+      //       const xmlDoc = await loadPanoramaConfig();
+      //       if (!xmlDoc) {
+      //         console.error("Failed to load panorama configuration.");
+      //         return;
+      //       }
+
+      //       const pano = new pano2vrPlayer("container");
+      //       pano.setQueryParameter("ts=68917192");
+
+      //       // Handle node change and save to localStorage
+      //       pano.on("changenode", function () {
+      //         const currentNode = pano.getCurrentNode() || "unknown";
+      //         console.log("Node changed to:", currentNode);
+      //         saveLastNode(currentNode);
+      //       });
+
+      //       // Retrieve startNode from localStorage or params
+      //       const lastNode = getLastNode();
+      //       const startNode = lastNode;
+
+      //       // Load pano.xml and set the view to the last saved node
+      //       pano.readConfigUrlAsync("pano.xml?ts=68917192", () => {
+      //         if (startNode) {
+      //           pano.updatePanorama(startNode); // Use last saved node as default view
+      //           console.log("Default view set to last saved node:", startNode);
+      //         } else {
+      //           console.warn("No saved node found. Using default view.");
+      //         }
+      //       });
+      //     } catch (error) {
+      //       console.error("An error occurred during initialization:", error);
+      //     }
+      //   });
 
       async function loadPanoramaConfig() {
         try {
@@ -96,13 +131,6 @@
           const xmlText = await response.text();
           const parser = new DOMParser();
           const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-
-          const panoramas = xmlDoc.getElementsByTagName("panorama");
-          const panoramaIds = Array.from(panoramas)
-            .map((pano) => pano.getAttribute("id"))
-            .join(", ");
-          console.log("Panorama IDs:", panoramaIds);
-
           return xmlDoc;
         } catch (error) {
           console.error("Error loading pano.xml:", error);
@@ -112,50 +140,60 @@
 
       window.addEventListener("load", async () => {
         try {
-          const xmlDoc = await loadPanoramaConfig();
-          if (!xmlDoc) {
-            console.error("Failed to load panorama configuration.");
-            return;
-          }
-
           const pano = new pano2vrPlayer("container");
           pano.setQueryParameter("ts=68917192");
 
-          console.log("Inspecting pano2vrPlayer instance:", pano.qh);
-
-          pano.on("nodechanged", () => {
-            const currentNode = xmlDoc
-              .getElementsByTagName("panorama")
-              .getAttribute("id")
-              ? pano.getCurrentNode()
-              : "unknown";
+          // Handle node change and save to localStorage
+          pano.on("changenode", function () {
+            const currentNode = pano.getCurrentNode() || "unknown";
             console.log("Node changed to:", currentNode);
             saveLastNode(currentNode);
           });
 
-          const params = {};
-          parseParams(document.location.hash, params);
-          const startNode = params.startNode || getLastNode() || "node6";
+          // Retrieve startNode from localStorage
+          const lastNode = getLastNode();
 
-          pano.readConfigUrlAsync("pano.xml?ts=68917192", () => {
-            console.log("pano.xml file loaded successfully!");
+          const configUrl = lastNode
+            ? `pano.xml?ts=68917192&startnode=${lastNode}`
+            : `pano.xml?ts=68917192`;
 
-            if (typeof pano.setNode === "function") {
-              pano.setNode(startNode);
-              console.log("Navigated to startNode using setNode:", startNode);
-            } else if (typeof pano.loadNode === "function") {
-              pano.loadNode(startNode);
-              console.log("Navigated to startNode using loadNode:", startNode);
+          // Load pano.xml and set the view to the last saved node
+          pano.readConfigUrlAsync(`pano.xml?ts=68917192`, () => {
+            console.log("Panorama configuration loaded.");
+            if (lastNode) {
+              pano.openNext(`{${lastNode}}`); // The second argument (true) may force the update if needed
+              console.log("Panorama started with node:", lastNode); // Use last saved node as default view
             } else {
-              console.error(
-                "No method to navigate to a specific node found in pano2vrPlayer API."
-              );
+              console.warn("No saved node found. Using default view.");
             }
           });
         } catch (error) {
           console.error("An error occurred during initialization:", error);
         }
       });
+
+      function saveLastNode(nodeId) {
+        console.log(`Saving last node: ${nodeId}`);
+        try {
+          if (typeof localStorage !== "undefined") {
+            localStorage.setItem("lastViewedNode", nodeId);
+            console.log("Last node saved to localStorage:", nodeId);
+          }
+        } catch (e) {
+          console.error("Failed to save last node to localStorage:", e);
+        }
+      }
+
+      function getLastNode() {
+        try {
+          const lastNode = localStorage.getItem("lastViewedNode");
+          console.log("Last node retrieved from localStorage:", lastNode);
+          return lastNode;
+        } catch (e) {
+          console.error("Failed to retrieve last node from localStorage:", e);
+          return null;
+        }
+      }
 
       function parseParams(paramsString, params) {
         paramsString = paramsString.substring(1);
