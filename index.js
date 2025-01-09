@@ -21,26 +21,23 @@ window.addEventListener("load", async () => {
     // pano.setQueryParameter("ts=68917192");
     initializePano();
 
-    // Handle node change and save to localStorage
     pano.on("changenode", function () {
       const currentNode = pano.getCurrentNode() || "unknown";
       console.log("Node changed to:", currentNode);
       saveLastNode(currentNode);
     });
 
-    // Retrieve startNode from localStorage
     const lastNode = getLastNode();
 
     const configUrl = lastNode
       ? `pano.xml?ts=68917192&startnode=${lastNode}`
       : `pano.xml?ts=68917192`;
 
-    // Load pano.xml and set the view to the last saved node
     pano.readConfigUrlAsync(`pano.xml?ts=68917192`, () => {
       console.log("Panorama configuration loaded.");
       if (lastNode) {
-        pano.openNext(`{${lastNode}}`); // The second argument (true) may force the update if needed
-        console.log("Panorama started with node:", lastNode); // Use last saved node as default view
+        pano.openNext(`{${lastNode}}`);
+        console.log("Panorama started with node:", lastNode);
       } else {
         console.warn("No saved node found. Using default view.");
       }

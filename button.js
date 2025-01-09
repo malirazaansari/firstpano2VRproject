@@ -2,7 +2,6 @@ import { pano, initializePano } from "./shared.js";
 
 async function loadMenuFromXML() {
   try {
-    // Fetch the XML file
     initializePano();
 
     const response = await fetch("pano.xml");
@@ -12,16 +11,12 @@ async function loadMenuFromXML() {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(xmlText, "text/xml");
 
-    // Get all <panorama> elements
     const panoramas = xmlDoc.getElementsByTagName("panorama");
 
-    // Get the menu container
     const menuContainer = document.getElementById("menu");
 
-    // Clear any existing buttons
     menuContainer.innerHTML = "";
 
-    // Loop through panoramas and create buttons
     Array.from(panoramas).forEach((panorama) => {
       const nodeId = panorama.getAttribute("id");
       const button = document.createElement("button");
@@ -35,10 +30,8 @@ async function loadMenuFromXML() {
       button.style.border = "none";
       button.style.borderRadius = "5px";
 
-      // Add onclick handler
       button.onclick = () => openNode(nodeId);
 
-      // Append the button to the menu
       menuContainer.appendChild(button);
     });
   } catch (error) {
@@ -47,7 +40,6 @@ async function loadMenuFromXML() {
 }
 
 function openNode(nodeId) {
-  // Function to open the node
   if (pano) {
     pano.openNext(`{${nodeId}}`);
     console.log(`Navigated to node: ${nodeId}`);
@@ -56,5 +48,4 @@ function openNode(nodeId) {
   }
 }
 
-// Call the function on page load
 window.addEventListener("load", loadMenuFromXML);

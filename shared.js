@@ -1,4 +1,3 @@
-// shared.js
 let pano;
 let skin;
 
